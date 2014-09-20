@@ -1,5 +1,6 @@
 import optparse
 import sys
+import os
 import urllib.request
 import urllib.parse
 import configparser
@@ -9,12 +10,12 @@ import browser
 
 # Create or load configuration file
 config = configparser.ConfigParser()
-try:
+if os.path.exists("config.ini"):
     config.read("config.ini")
-except EnvironmentError:
-    open("config.ini", "w")
-    config.read("defaultconfig.ini")
-    config.write("config.ini")
+else:
+    with open("config.ini", "w") as config_file:
+        config.read("defaultconfig.ini")
+        config.write(config_file)
 vk_config = config["vk.com"]
 
 # Set up global constants
@@ -37,10 +38,11 @@ def auth():
 
 
 def get_data(ids):
-    values = {"method": "users.get",
+    values = {"access_token": vk_config["access_token"],
               "uids": ",".join(ids)}
+    method_url = api_url + "users.get"
     query = urllib.parse.urlencode(values).encode("utf8")
-    request = urllib.request.Request(api_url, query)
+    request = urllib.request.Request(method_url, query)
     response = urllib.request.urlopen(request).read().decode()
     return response
 
@@ -61,10 +63,21 @@ def main():
     else:
         output = sys.stdout
 
-
+    # Get user session
+    if "access_token" not in vk_config:
+        print("[*] Getting user session...")
+        access_token, user_id = auth()
+        vk_config.update({"access_token": access_token, "user_id": user_id})
+        print("[+] Got.")
 
     with output as fh:
-        fh.write(str(auth()))
+        print("[*] Gathering data...")
+        fh.write(str(get_data([vk_config["user_id"]])))
+        print("[+] Done.")
 
 
-main()
+try:
+    main()
+finally:
+    with open("config.ini", "w") as config_file:
+        config.write(config_file)
