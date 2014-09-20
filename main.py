@@ -2,25 +2,12 @@ import optparse
 import sys
 import urllib.request
 import urllib.parse
-import webbrowser
+import browser
 
 api_url = "https://api.vk.com/api.php"
 oauth_url = "https://oauth.vk.com/authorize"
 permissions = ["friends", "photos", "status", "wall", "groups",
         "messages", "offline"]
-access_token = open("access-token.key").read() # TEMPORARY
-
-headers = {
-    "Connection": "keep-alive",
-    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-    "Accept-Encoding": "gzip,deflate,sdch",
-    "Accept-Language": "ru-RU,ru;q=0.8,en-US;q=0.6,en;q=0.4",
-    "Accept-Charset": "windows-1251,utf-8;q=0.7,*;q=0.3",
-    "User-Agent": "Mozilla/5.0 (Windows; I; Windows NT 5.1; ru; rv:1.9.2.13)"
-        " Gecko/20100101 Firefox/4.0",
-    "Cookie": "remixlang=0",
-    "Host": "oauth.vk.com"
-}
 
 
 def auth():
@@ -30,12 +17,8 @@ def auth():
               "display": "page",
               "v": "5.24",
               "response_type": "token"}
-    query = urllib.parse.urlencode(values).encode("utf8")
-    print(oauth_url + "?" + query.decode())
-    webbrowser.open(oauth_url + "?" + query.decode())
-    request = urllib.request.Request(oauth_url, query, headers=headers)
-    response = urllib.request.urlopen(request).read().decode()
-    return response
+    brwsr = browser.Browser(oauth_url, values)
+    return brwsr.data
 
 
 def get_data(ids):
@@ -62,7 +45,7 @@ def main():
         output = sys.stdout
 
     with output as fh:
-        fh.write(auth())
+        fh.write(str(auth()))
 
 
 main()
